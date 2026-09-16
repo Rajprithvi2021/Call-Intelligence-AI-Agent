@@ -1,0 +1,11 @@
+Rep: Thanks for joining, Priya. Just so you know, I'm recording this call for my notes. I'm Leo from Orbit Analytics.
+Prospect: Sure, no problem. We're evaluating dashboards for our ops team of about 40 people.
+Rep: Great. Our Growth plan is $30 per seat per month, and there's 10% off if you prepay annually.
+Prospect: Our budget is tight. Could you do 25% off if we sign this quarter?
+Rep: That's above what I can approve myself, but I'll check with my manager and get back to you by Thursday.
+Prospect: Okay. Also, does it integrate with Snowflake?
+Rep: Yes, we have a native Snowflake connector. I'm confident you'll see a 3x ROI in the first year.
+Prospect: Good to know. I'll need our security team to review your SOC 2 report before we can move forward.
+Rep: I'll send the SOC 2 report today after the call.
+Prospect: Great. Let's also set up a technical demo with our data engineer sometime next week.
+Rep: Sounds good, we'll figure out a time.

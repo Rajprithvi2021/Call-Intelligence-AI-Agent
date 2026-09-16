@@ -1,0 +1,11 @@
+[00:00] Agent: Thank you for calling CloudNest support, this call is recorded for quality. My name is Aisha. How can I help?
+[00:06] Customer: Yeah, my account has been locked for three days and nobody has fixed it. This is ridiculous.
+[00:12] Agent: I'm really sorry about that. Can I have the email on the account to verify?
+[00:16] Customer: It's k.moore@example.com. I've called four times. This is complete bullshit.
+[00:24] Agent: I completely understand the frustration. I can see the lock was triggered by a failed payment.
+[00:31] Customer: The payment failed because your system charged me twice! I want a refund for the double charge, that's $180, and if this isn't fixed today I'll sue you.
+[00:40] Agent: I can see the duplicate charge. I can issue a $50 credit right now, and I'll ask my team lead about refunding the full $180.
+[00:48] Customer: Fine. When will I hear back?
+[00:51] Agent: Someone from billing will reach out soon. I've also unlocked your account, can you try logging in?
+[00:58] Customer: Okay, it works now. But I want that refund.
+[01:02] Agent: Noted. I'll escalate the refund to my team lead today.

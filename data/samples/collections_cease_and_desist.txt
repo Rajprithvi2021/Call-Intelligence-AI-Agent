@@ -1,0 +1,9 @@
+Agent: Good afternoon, this is Priya from Summit Recovery Services calling for Dana Lopez. This call may be recorded.
+Consumer: This is Dana. I told you guys not to call me anymore. This is the third time this week.
+Agent: I'm sorry for the inconvenience, ma'am. I'm calling about the Brightline loan balance.
+Consumer: I don't care. Stop calling me. Take me off your list. And honestly, I've already filed for bankruptcy, chapter 7, last month.
+Agent: Okay. Do you have the bankruptcy case number?
+Consumer: My attorney has it. Contact my attorney, not me. His name is Robert Hale.
+Agent: Could you give me his phone number?
+Consumer: It's 555-201-8890. Now don't call me ever again.
+Agent: Understood. I'll note the account and pass this to our bankruptcy team.

@@ -1,0 +1,11 @@
+Maya: Morning everyone. Quick standup. Arjun, you first.
+Arjun: Yesterday I finished the payments retry logic. Today I'm writing tests for it. I'm blocked on the staging database, it's been down since Friday.
+Maya: Okay. Kevin, can you look at staging today?
+Kevin: Yeah, I'll fix staging by noon today.
+Maya: Thanks. Sofia?
+Sofia: I'm working on the onboarding redesign. We still haven't decided whether to drop the phone number field.
+Maya: Let's decide that now. We're dropping the phone number field from sign-up.
+Sofia: Great, I'll update the designs by Wednesday.
+Maya: Someone also needs to update the API docs for the new retry endpoint at some point.
+Arjun: Also, the vendor sent the prod API key in Slack, we should rotate it.
+Maya: Good catch. Let's get that rotated soon.

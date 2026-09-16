@@ -1,0 +1,13 @@
+1: Agent: Hi, this is Marcus with Summit Recovery Services. This call is being recorded. Am I speaking with James Carter?
+2: Consumer: Yeah, this is James.
+3: Agent: Thanks, James. This is an attempt to collect a debt, and any information obtained will be used for that purpose. For verification, can you confirm your date of birth?
+4: Consumer: March 3rd, 1988.
+5: Consumer: Look, I know I owe on the Northgate card, but I can't pay the full $2,800 right now.
+6: Agent: I understand. We can settle the account for $1,400 if it's paid in one payment today.
+7: Consumer: That's still too much right now. Could I do $700 now and $700 next month?
+8: Agent: Let me note that — $700 today and $700 on the 15th of next month. I'll need a supervisor to approve the settlement split, I'll follow up by Friday.
+9: Consumer: Okay. Just please don't call me at work anymore, my boss wasn't happy last time.
+10: Agent: Understood, I'll update your account so we only contact you on your cell phone. Can I take the first $700 payment by card now?
+11: Consumer: Sure, it's the Visa card ending in 4417.
+12: Agent: Thank you, the $700 payment is processed. You'll get a confirmation email, and I'll call you back by Friday once the supervisor has reviewed the split.
+13: Consumer: Fine. Thanks.

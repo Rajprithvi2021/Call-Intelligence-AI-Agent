@@ -1,0 +1,20 @@
+# Core
+pydantic>=2.13
+python-dotenv>=1.2
+python-dateutil>=2.9
+tenacity>=9.1
+httpx>=0.28
+google-genai>=2.23
+
+# API + storage
+fastapi>=0.141
+uvicorn>=0.53
+python-multipart>=0.0.32
+pg8000>=1.31
+
+# UI
+streamlit>=1.64
+requests>=2.34
+
+# Dev
+pytest>=9.1
