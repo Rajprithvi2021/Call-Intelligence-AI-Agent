@@ -74,8 +74,8 @@ Railway builds with Railpack, using `requirements.txt` and Python 3.12 from
 `.python-version`. No Dockerfile is needed.
 
 1. **Create a project** on Railway, then choose *Deploy from GitHub repo* and pick this repo.
-   Rename the service to **`api`**. It uses `railway.json`, which runs
-   `python -m app.api` with a health check on `/health`.
+   Rename the service to **`api`**. `railway.json` runs `python scripts/start.py`,
+   which starts the API or the UI depending on the service (see step 4).
 2. **Add a database** with *+ New → Database → PostgreSQL*. For semantic search, deploy
    Railway's **pgvector** template instead; plain Postgres gives keyword-only search.
 3. **Set the `api` service variables:**
@@ -87,12 +87,13 @@ Railway builds with Railpack, using `requirements.txt` and Python 3.12 from
    Add any other overrides from `.env.example` (models, thresholds). Under
    *Settings → Networking*, generate a public domain if you want to reach the API or
    `/docs` from outside.
-4. **Add the UI** with *+ New → GitHub repo* (the same repo) and rename it **`ui`**. Under
-   *Settings → Config-as-code*, set the config file path to **`/railway.ui.json`**
-   (it runs `python scripts/run_ui.py`, with a health check on `/_stcore/health`). Variables:
+4. **Add the UI** with *+ New → GitHub repo* (the same repo) and rename it **`ui`**.
+   A service whose name contains the word `ui` starts Streamlit; any other name starts
+   the API. To choose explicitly, set `APP_ROLE=ui` or `APP_ROLE=api`. Variables:
    ```
    API_URL=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:8000
    ```
+   Its deploy log should begin with `start.py: starting ui`.
    Then generate a public domain for `ui`. That is the app URL.
 5. **Optional, for audio retries:** add a volume to `api` mounted at `/data` and set
    `UPLOAD_DIR=/data/uploads` so uploaded recordings survive redeploys.

@@ -83,6 +83,11 @@ def _process_now(call_id: str, source: str, payload: str, meeting_date: date,
         store.set_status(call_id, "failed", f"{type(exc).__name__}: {exc}"[:1000])
 
 
+@app.get("/")
+def root():
+    return {"service": "call-intelligence-api", "docs": "/docs", "health": "/health"}
+
+
 @app.get("/health")
 def health():
     return {
