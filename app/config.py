@@ -37,7 +37,8 @@ class Settings:
 
     database_url: str = os.getenv("DATABASE_URL", "")
     local_store_dir: Path = ROOT / os.getenv("LOCAL_STORE_DIR", "data/store")
-    upload_dir: Path = ROOT / "data" / "uploads"
+    # On Railway, mount a volume and point this at it so uploaded audio survives redeploys.
+    upload_dir: Path = ROOT / os.getenv("UPLOAD_DIR", "data/uploads")
     policies_dir: Path = ROOT / "policies"
 
     job_concurrency: int = int(os.getenv("JOB_CONCURRENCY", "1"))

@@ -1,5 +1,5 @@
--- Idempotent schema. {EMBED_DIM} is substituted from settings at startup.
-CREATE EXTENSION IF NOT EXISTS vector;
+-- Core schema (plain PostgreSQL). Idempotent; applied on every API start.
+-- Vector columns live in vector.sql and are added only when pgvector is available.
 
 CREATE TABLE IF NOT EXISTS calls (
     id            BIGSERIAL PRIMARY KEY,
@@ -33,11 +33,9 @@ CREATE TABLE IF NOT EXISTS transcript_lines (
     end_s      REAL,
     text       TEXT NOT NULL,
     tsv        TSVECTOR GENERATED ALWAYS AS (to_tsvector('english', text)) STORED,
-    embedding  VECTOR({EMBED_DIM}),
     UNIQUE (call_id, n)
 );
 CREATE INDEX IF NOT EXISTS transcript_lines_tsv_idx ON transcript_lines USING GIN (tsv);
-CREATE INDEX IF NOT EXISTS transcript_lines_emb_idx ON transcript_lines USING hnsw (embedding vector_cosine_ops);
 
 CREATE TABLE IF NOT EXISTS review_items (
     id               BIGSERIAL PRIMARY KEY,
@@ -60,6 +58,5 @@ CREATE TABLE IF NOT EXISTS kb_chunks (
     id         BIGSERIAL PRIMARY KEY,
     domain     TEXT NOT NULL,
     rule_id    TEXT,
-    text       TEXT NOT NULL,
-    embedding  VECTOR({EMBED_DIM})
+    text       TEXT NOT NULL
 );

@@ -1,8 +1,10 @@
 """HTTP API.
 
-    uvicorn app.api:app --reload
+    python -m app.api            # reads HOST / PORT (Railway sets PORT)
+    uvicorn app.api:app --reload # local development
 """
 import logging
+import os
 import threading
 import time
 import uuid
@@ -31,6 +33,8 @@ DomainParam = Literal["debt_collection", "sales", "support", "standup"]
 async def lifespan(_: FastAPI):
     store = get_store()  # connects and creates tables when DATABASE_URL is set
     log.info("store: %s", store.kind)
+    if store.kind == "local" and os.getenv("RAILWAY_ENVIRONMENT"):
+        log.warning("DATABASE_URL is not set: using the local JSON store, which is lost on every redeploy")
     # Background jobs don't survive a restart; surface them as retryable failures.
     for call in store.list_calls():
         if call["status"] not in ("done", "failed"):
@@ -197,3 +201,11 @@ def search(
         qvec = vecs[0] if vecs else None
     results = get_store().search(q, qvec, domain, flag, sentiment, min(max(limit, 1), 100))
     return {"query": q, "semantic": qvec is not None, "results": results}
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    # "::" listens on IPv6 and IPv4, which Railway's private network needs.
+    default_host = "::" if os.getenv("RAILWAY_ENVIRONMENT") else "127.0.0.1"
+    uvicorn.run(app, host=os.getenv("HOST", default_host), port=int(os.getenv("PORT", "8000")))

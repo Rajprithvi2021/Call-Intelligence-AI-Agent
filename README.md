@@ -44,8 +44,8 @@ python -m app.pipeline data/samples/debt_collection_2026-07-01.txt --date 2026-0
 Run the API and the UI (two terminals):
 
 ```bash
-uvicorn app.api:app --port 8000
-streamlit run ui/streamlit_app.py
+python -m app.api
+python scripts/run_ui.py
 ```
 
 Open http://localhost:8501. Pick a sample on the **Process call** page (or upload
@@ -58,13 +58,54 @@ A two-speaker test recording is in `data/samples/audio/`. To generate more:
 ### Storage
 
 - `DATABASE_URL` empty: a local JSON store in `data/store/` (dev only, zero setup).
-- **Postgres + pgvector** (recommended): `docker compose up -d` with
-  `DATABASE_URL=postgresql://postgres:postgres@localhost:5432/callintel`, or a free
-  Neon/Supabase database (`...?sslmode=require`). Tables are created on startup
-  (`db/init.sql`).
+- **Postgres** (production): Railway Postgres, Neon or Supabase. Tables are created on
+  startup (`db/init.sql`). If the `vector` extension is available, `db/vector.sql`
+  adds embedding columns and search becomes keyword + semantic. Otherwise search is
+  keyword-only and everything else works the same.
+  SSL is used only when the URL contains `?sslmode=require`.
 
-The driver is `pg8000` (pure Python), because this machine's application-control
-policy blocks the compiled `psycopg` DLLs.
+The driver is `pg8000` (pure Python), because the development machine's
+application-control policy blocks the compiled `psycopg` DLLs.
+
+## Deploy on Railway
+
+One GitHub repo becomes three Railway services: **api**, **ui** and **Postgres**.
+Railway builds with Railpack, using `requirements.txt` and Python 3.12 from
+`.python-version`. No Dockerfile is needed.
+
+1. **Create a project** on Railway, then choose *Deploy from GitHub repo* and pick this repo.
+   Rename the service to **`api`**. It uses `railway.json`, which runs
+   `python -m app.api` with a health check on `/health`.
+2. **Add a database** with *+ New → Database → PostgreSQL*. For semantic search, deploy
+   Railway's **pgvector** template instead; plain Postgres gives keyword-only search.
+3. **Set the `api` service variables:**
+   ```
+   GEMINI_API_KEY=<your key>
+   DATABASE_URL=${{Postgres.DATABASE_URL}}
+   PORT=8000
+   ```
+   Add any other overrides from `.env.example` (models, thresholds). Under
+   *Settings → Networking*, generate a public domain if you want to reach the API or
+   `/docs` from outside.
+4. **Add the UI** with *+ New → GitHub repo* (the same repo) and rename it **`ui`**. Under
+   *Settings → Config-as-code*, set the config file path to **`/railway.ui.json`**
+   (it runs `python scripts/run_ui.py`, with a health check on `/_stcore/health`). Variables:
+   ```
+   API_URL=http://${{api.RAILWAY_PRIVATE_DOMAIN}}:8000
+   ```
+   Then generate a public domain for `ui`. That is the app URL.
+5. **Optional, for audio retries:** add a volume to `api` mounted at `/data` and set
+   `UPLOAD_DIR=/data/uploads` so uploaded recordings survive redeploys.
+
+How it fits together:
+- The API binds `::` on `$PORT`, so the UI reaches it over Railway's private network
+  and nothing but the UI needs to be public.
+- `DATABASE_URL` from the Railway reference points at the private host, so no SSL is used.
+- To connect from your laptop instead, use the Postgres service's `DATABASE_PUBLIC_URL`
+  with `?sslmode=require` appended.
+- Jobs run inside the API process. A redeploy marks in-flight calls as failed, and
+  they can be retried from the UI.
+- Keep a single `api` replica: the job queue and concurrency limit live in memory.
 
 ## API
 
@@ -119,7 +160,8 @@ prompt, or all files when the domain is unknown. Edit these files to change what
 | Knowledge base | Full policy file in the prompt | Can't miss a rule; files are small | Doesn't scale. v1 retrieves from `kb_chunks` (table already exists). |
 | Rules | Regex lexicons | Guaranteed recall on high-stakes phrases, with line refs | Misses paraphrases (the LLM covers those). False positives cost one reviewer click. |
 | Dates | `dateutil` + custom resolver | Exact, testable | Only common phrases. The rest are marked vague and reviewed. |
-| Storage/search | Postgres + pgvector (FTS + cosine, RRF merge) | One store for records, JSON, keyword and vector search | Needs a server. The local JSON store bridges the gap for dev. |
+| Storage/search | Postgres (+ pgvector when available): FTS + cosine, RRF merge | One store for records, JSON, keyword and vector search | Needs a server. The local JSON store bridges the gap for dev. |
+| Hosting | Railway: two services from one repo, plus managed Postgres | Deploys straight from GitHub, private networking, no Dockerfile | Single API replica, because jobs run in-process. The filesystem is ephemeral unless a volume is attached. |
 | API/jobs | FastAPI + `BackgroundTasks`, one job at a time | No extra infrastructure | Jobs don't survive restarts (they're marked failed and can be retried). v1: a queue (Arq/Celery). |
 | UI | Streamlit | Fastest usable internal tool | Not customer-grade. |
 

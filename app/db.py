@@ -1,20 +1,27 @@
-"""PostgreSQL + pgvector store (pure-Python pg8000 driver).
+"""PostgreSQL store (pure-Python pg8000 driver), with pgvector when available.
 
-pg8000 is used instead of psycopg because this machine's application-control
-policy blocks psycopg's compiled DLLs. Vectors are passed as text literals
-and cast with CAST(... AS vector).
+pg8000 is used instead of psycopg because the development machine's
+application-control policy blocks psycopg's compiled DLLs. Vectors are passed
+as text literals and cast with CAST(... AS vector).
+
+If the database has no pgvector extension (e.g. Railway's default Postgres),
+the store still works and search is keyword-only.
 """
 import json
+import logging
 import ssl
 from contextlib import contextmanager
 from urllib.parse import parse_qs, unquote, urlparse
 
+import pg8000.exceptions
 import pg8000.native
 
 from app.config import ROOT, settings
 from app.store import rrf_merge
 
 INIT_SQL = ROOT / "db" / "init.sql"
+VECTOR_SQL = ROOT / "db" / "vector.sql"
+log = logging.getLogger(__name__)
 
 
 def _vec(v: list[float]) -> str:
@@ -26,12 +33,15 @@ class PostgresStore:
 
     def __init__(self, url: str):
         u = urlparse(url)
-        sslmode = parse_qs(u.query).get("sslmode", ["prefer" if u.hostname in ("localhost", "127.0.0.1") else "require"])[0]
+        # SSL only when the URL asks for it: Railway's private network is plain TCP,
+        # while hosted URLs (Neon, Supabase, Railway's public proxy) carry ?sslmode=require.
+        sslmode = parse_qs(u.query).get("sslmode", ["disable"])[0]
         self.params = dict(
             user=unquote(u.username or "postgres"), password=unquote(u.password or ""),
             host=u.hostname or "localhost", port=u.port or 5432, database=(u.path or "/postgres").lstrip("/"),
             ssl_context=ssl.create_default_context() if sslmode in ("require", "verify-ca", "verify-full") else None,
         )
+        self.has_vector = False
         self.init_db()
 
     @contextmanager
@@ -48,13 +58,24 @@ class PostgresStore:
         cols = [c["name"] for c in (con.columns or [])]
         return [dict(zip(cols, r)) for r in (result or [])]
 
-    def init_db(self) -> None:
-        sql = INIT_SQL.read_text(encoding="utf-8").replace("{EMBED_DIM}", str(settings.embed_dim))
+    @staticmethod
+    def _statements(path) -> list[str]:
+        sql = path.read_text(encoding="utf-8").replace("{EMBED_DIM}", str(settings.embed_dim))
         body = "\n".join(line for line in sql.splitlines() if not line.lstrip().startswith("--"))
+        return [s.strip() for s in body.split(";") if s.strip()]
+
+    def init_db(self) -> None:
         with self.conn() as con:
-            for stmt in (s.strip() for s in body.split(";")):
-                if stmt:
-                    con.run(stmt)
+            for stmt in self._statements(INIT_SQL):
+                con.run(stmt)
+            try:
+                con.run("CREATE EXTENSION IF NOT EXISTS vector")
+            except pg8000.exceptions.DatabaseError as exc:
+                log.warning("pgvector not available (%s); search will be keyword-only", exc)
+                return
+            for stmt in self._statements(VECTOR_SQL):
+                con.run(stmt)
+            self.has_vector = True
 
     # ------------------------------------------------------------------ calls
 
@@ -93,12 +114,16 @@ class PostgresStore:
                 )
                 con.run("DELETE FROM transcript_lines WHERE call_id = :id", id=cid)
                 for i, l in enumerate(result.transcript):
-                    emb = _vec(embeddings[i]) if embeddings and i < len(embeddings) else None
-                    con.run(
-                        "INSERT INTO transcript_lines (call_id, n, speaker, role, start_s, end_s, text, embedding) "
-                        "VALUES (:id, :n, :sp, :r, :st, :en, :tx, CAST(:emb AS vector))",
-                        id=cid, n=l.n, sp=l.speaker, r=l.role, st=l.start, en=l.end, tx=l.text, emb=emb,
-                    )
+                    row = dict(id=cid, n=l.n, sp=l.speaker, r=l.role, st=l.start, en=l.end, tx=l.text)
+                    if self.has_vector:
+                        emb = _vec(embeddings[i]) if embeddings and i < len(embeddings) else None
+                        con.run(
+                            "INSERT INTO transcript_lines (call_id, n, speaker, role, start_s, end_s, text, embedding) "
+                            "VALUES (:id, :n, :sp, :r, :st, :en, :tx, CAST(:emb AS vector))", emb=emb, **row)
+                    else:
+                        con.run(
+                            "INSERT INTO transcript_lines (call_id, n, speaker, role, start_s, end_s, text) "
+                            "VALUES (:id, :n, :sp, :r, :st, :en, :tx)", **row)
                 con.run("DELETE FROM review_items WHERE call_id = :id", id=cid)
                 for r in notes["review_items"]:
                     con.run(
@@ -204,7 +229,7 @@ class PostgresStore:
                 WHERE l.tsv @@ query AND l.id IN (SELECT l.id {base})
                 ORDER BY ts_rank(l.tsv, query) DESC LIMIT 50""", q=q, **params)
             semantic = []
-            if qvec:
+            if qvec and self.has_vector:
                 semantic = self.rows(con, f"""
                     SELECT l.id {base} AND l.embedding IS NOT NULL
                       AND (l.embedding <=> CAST(:qv AS vector)) <= :maxd
