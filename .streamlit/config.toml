@@ -1,0 +1,24 @@
+[theme]
+base = "light"
+primaryColor = "#4f46e5"
+backgroundColor = "#f6f7fb"
+secondaryBackgroundColor = "#eceff6"
+textColor = "#1c2233"
+borderColor = "#e3e6ef"
+baseRadius = "medium"
+showWidgetBorder = true
+linkColor = "#4f46e5"
+chartCategoricalColors = ["#4f46e5", "#0ea5e9", "#f59e0b", "#ef4444", "#10b981", "#8b5cf6", "#64748b"]
+
+[theme.sidebar]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f3f4f8"
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+maxUploadSize = 200
+
+[browser]
+gatherUsageStats = false
