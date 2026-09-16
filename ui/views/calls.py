@@ -123,7 +123,7 @@ def _action_meta(a: dict) -> str:
         due = ui.pill(f"Vague: {a['due_date_phrase']}", "amber")
     else:
         due = '<span class="ci-kv">Due <b>not stated</b></span>'
-    note = f'<span class="ci-muted">⚠ {ui.esc(a["date_note"])}</span>' if a.get("date_note") else ""
+    note = f'<span class="ci-muted">Check: {ui.esc(a["date_note"])}</span>' if a.get("date_note") else ""
     return owner + due + note
 
 

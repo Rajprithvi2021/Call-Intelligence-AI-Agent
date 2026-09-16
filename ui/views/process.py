@@ -52,6 +52,7 @@ def _track(call_id: str) -> None:
     order = [s[0] for s in STEPS]
     with st.status("Processing call…", expanded=True) as box:
         line = st.empty()
+        current = 0
         for _ in range(240):
             try:
                 c = ui.api("GET", f"/calls/{call_id}")
@@ -69,15 +70,22 @@ def _track(call_id: str) -> None:
                 if st.button("Open call", icon=":material/arrow_forward:"):
                     ui.open_call(call_id)
                 return
-            current = order.index(status) if status in order else 0
+            if status in order:
+                current = order.index(status)  # while retrying, keep showing the last active step
             rows = []
             for i, (key, label, desc) in enumerate(STEPS):
                 if key == "transcribing" and c["source"] != "audio":
                     continue
-                mark = "✅" if i < current else ("⏳" if i == current else "▫️")
+                if i < current:
+                    mark = ":green[:material/check_circle:]"
+                elif i == current:
+                    mark = ":blue[:material/progress_activity:]"
+                else:
+                    mark = ":gray[:material/radio_button_unchecked:]"
                 rows.append(f"{mark} **{label}** — {desc}")
             if status.startswith("waiting"):
-                rows.append(f"⚠️ Model busy, {status}")
+                rows.append(":orange[:material/schedule:] **Gemini is busy** — the model returned a "
+                            "temporary overload error, so the job will retry automatically in a moment.")
             line.markdown("\n\n".join(rows))
             time.sleep(2)
         box.update(label="Still processing. Check the Calls page later.", state="running")

@@ -118,7 +118,9 @@ STATUS_TONE = {"done": "green", "failed": "red"}
 
 
 def status_pill(status: str) -> str:
-    if status in PROCESSING or status.startswith("waiting"):
+    if status.startswith("waiting"):
+        return pill("retrying (model busy)", "amber", '<span class="ci-dot"></span>')
+    if status in PROCESSING:
         return pill(status, "blue", '<span class="ci-dot"></span>')
     return pill(status, STATUS_TONE.get(status, "gray"))
 
